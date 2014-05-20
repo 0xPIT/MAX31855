@@ -1,4 +1,5 @@
 /*******************************************************************************
+ino
 * Thermocouple to serial for MAX31855 example 
 * Version: 1.00
 * Date: 26-12-2011
@@ -18,15 +19,17 @@
 * 1.00      Initial public release.
 *
 *******************************************************************************/
-// ***** INCLUDES *****
+
+#include <SPI.h>
 #include  <MAX31855.h>
 
-// ***** PIN DEFINITIONS *****
-const  unsigned  char thermocoupleSO = 12;
-const  unsigned  char thermocoupleCS = 10;
-const  unsigned  char thermocoupleCLK = 13;
 
-MAX31855  MAX31855(thermocoupleSO, thermocoupleCS, thermocoupleCLK);
+#define thermocoupleSO 12
+#define thermocoupleCS 10
+#define thermocoupleCLK 13
+
+//MAX31855  MAX31855(thermocoupleSO, thermocoupleCS, thermocoupleCLK);
+MAX31855  MAX31855(thermocoupleCS);
 
 void  setup()
 {
@@ -35,16 +38,16 @@ void  setup()
 
 void  loop()
 {
-  double  temperature;
+  double temperature;
   
-  // Retrieve thermocouple temperature in Degree Celsius
-  temperature = MAX31855.readThermocouple(CELSIUS);
+  //temperature = MAX31855.readThermocouple(MAX31855::Celsius);
+  MAX31855.readThermocouple(temperature);
   Serial.print("Thermocouple temperature: ");
   Serial.print(temperature);
   Serial.println(" Degree Celsius");
   
-  // Retrieve cold junction temperature in Degree Celsius
-  temperature = MAX31855.readJunction(CELSIUS);
+  //temperature = MAX31855.readJunction(MAX31855::Celsius);
+  MAX31855.readJunction(temperature);
   Serial.print("Junction temperature: ");
   Serial.print(temperature);
   Serial.println(" Degree Celsius");
