@@ -12,8 +12,8 @@ MAX31855	KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
-readThermocouple	KEYWORD2
-readJunction	KEYWORD2
+readThermocouple KEYWORD2
+readJunction KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)
@@ -22,8 +22,10 @@ readJunction	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
-CELSIUS	LITERAL1
-FAHRENHEIT	LITERAL1	
-FAULT_OPEN	LITERAL1
-FAULT_SHORT_GND	LITERAL1
-FAULT_SHORT_VCC	LITERAL1
+Unknown LITERAL1
+Ok LITERAL1
+FaultOpen LITERAL1
+FaultShortGround LITERAL1
+FaultShortSupply LITERAL1
+Celsius LITERAL1
+Fahrenheit LITERAL1

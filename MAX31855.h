@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------------
 //  MAX31855 Library
-//  Company: Rocket Scream Electronics
-//  Website: www.rocketscream.com
-// 
+//  (c) 2014 karl@pitrich.com
+//  (c) Rocket Scream Electronics
+//  
 //  This library is licensed under Creative Commons Attribution-ShareAlike 3.0 
 //  Unported License.
 // 

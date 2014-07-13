@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------------
 //  MAX31855 Library
-//  Company: Rocket Scream Electronics
-//  Website: www.rocketscream.com
-// 
+//  (c) 2014 karl@pitrich.com
+//  (c) Rocket Scream Electronics
+//  
 //  This library is licensed under Creative Commons Attribution-ShareAlike 3.0 
 //  Unported License.
 // 
@@ -15,6 +15,8 @@
 
 #include  "MAX31855.h"
 
+// ----------------------------------------------------------------------------
+
 MAX31855::MAX31855(uint8_t CS, unsigned char SO, uint8_t SCK)
   : cs(CS), so(SO), sck(SCK)
 {
@@ -25,6 +27,8 @@ MAX31855::MAX31855(uint8_t CS, unsigned char SO, uint8_t SCK)
   digitalWrite(sck, LOW);
 }
 
+// ----------------------------------------------------------------------------
+
 MAX31855::MAX31855(uint8_t CS)
   : cs(CS), so(0), sck(0)
 {
@@ -32,26 +36,34 @@ MAX31855::MAX31855(uint8_t CS)
   digitalWrite(cs, HIGH);
 
   SPI.begin();
-  //SPI.setBitOrder(MSBFIRST);
-  //SPI.setDataMode(SPI_MODE0);
-  //SPI.setClockDivider(SPI_CLOCK_DIV4);
+#if 0  // this is note required in normal use cases
+  SPI.setBitOrder(MSBFIRST);
+  SPI.setDataMode(SPI_MODE0);
+  SPI.setClockDivider(SPI_CLOCK_DIV4);
+#endif
 }
 
-struct valueconfig {
+// ----------------------------------------------------------------------------
+
+struct SensorConfig {
   uint8_t  shift; // how much to shift right to get to the value 
   uint16_t mask;  // bits to mask for actual value
   uint8_t  sign;  // bit holding the sign
   double  factor;
 };
 
-MAX31855::status_t MAX31855::read(double &temperature, unit_t unit, bool j) {
-  valueconfig S[2] = {
-    { 18, 0x3FFF, 14, 0.25   }, // thermocouple
-    {  4, 0x0FFF, 12, 0.0625 }  // junction
-  };
+// ----------------------------------------------------------------------------
 
-  MAX31855::MAX31855_t data;
-  MAX31855::status_t result;
+const SensorConfig sensors[2] = {
+  { 18, 0x3FFF, 14, 0.25   }, // thermocouple
+  {  4, 0x0FFF, 12, 0.0625 }  // junction
+};
+
+// ----------------------------------------------------------------------------
+
+MAX31855::status_t MAX31855::read(double &temperature, unit_t unit, bool junction) {
+  status_t result;
+  MAX31855_t data;
 
   if (so == 0 && sck == 0 && cs > 0) {
     result = readDataSPI(data);
@@ -61,12 +73,12 @@ MAX31855::status_t MAX31855::read(double &temperature, unit_t unit, bool j) {
   }
 
   if (result == Ok) {
-    int16_t temp = (data.value >> S[j].shift) & S[j].mask;
-    if (temp & (1 << S[j].sign)) {
+    int16_t temp = (data.value >> sensors[junction].shift) & sensors[junction].mask;
+    if (temp & (1 << sensors[junction].sign)) {
       temp * -temp;
     }
     
-    temperature = temp * S[j].factor; // now in Celsius
+    temperature = temp * sensors[junction].factor; // now in Celsius
 
     if (unit == Fahrenheit) {
       temperature = (temperature * 9.0 / 5.0) + 32; 
@@ -76,13 +88,19 @@ MAX31855::status_t MAX31855::read(double &temperature, unit_t unit, bool j) {
   return result;
 }
 
+// ----------------------------------------------------------------------------
+
 MAX31855::status_t MAX31855::readThermocouple(double &temperature, unit_t unit) {
   return read(temperature, unit);
 }
 
+// ----------------------------------------------------------------------------
+
 MAX31855::status_t MAX31855::readJunction(double &temperature, unit_t unit) {
   return read(temperature, unit, true);
 }
+
+// ----------------------------------------------------------------------------
 
 MAX31855::status_t MAX31855::readData(MAX31855::MAX31855_t &buffer) {
   digitalWrite(cs, LOW);
@@ -101,6 +119,8 @@ MAX31855::status_t MAX31855::readData(MAX31855::MAX31855_t &buffer) {
   return validateResponse(buffer);
 }
 
+// ----------------------------------------------------------------------------
+
 MAX31855::status_t MAX31855::readDataSPI(MAX31855::MAX31855_t &buffer) {
   digitalWrite(cs, LOW);
   delay(1);
@@ -114,11 +134,13 @@ MAX31855::status_t MAX31855::readDataSPI(MAX31855::MAX31855_t &buffer) {
   return validateResponse(buffer);
 }
 
+// ----------------------------------------------------------------------------
+
 MAX31855::status_t MAX31855::validateResponse(MAX31855::MAX31855_t &buffer) { 
   if (buffer.Fault) {
-    if (buffer.FaultOpen)        return MAX31855::FaultOpen;
-    if (buffer.FaultShortGround) return MAX31855::FaultShortGround;
-    if (buffer.FaultShortSupply) return MAX31855::FaultShortSupply;
+    if (buffer.FaultOpen)        return FaultOpen;
+    if (buffer.FaultShortGround) return FaultShortGround;
+    if (buffer.FaultShortSupply) return FaultShortSupply;
   }
   return Ok;
 }
