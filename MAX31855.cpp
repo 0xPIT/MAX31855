@@ -32,25 +32,42 @@ MAX31855::MAX31855(uint8_t CS)
   digitalWrite(cs, HIGH);
 
   SPI.begin();
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setDataMode(SPI_MODE0);
-  SPI.setClockDivider(SPI_CLOCK_DIV4);
+  //SPI.setBitOrder(MSBFIRST);
+  //SPI.setDataMode(SPI_MODE0);
+  //SPI.setClockDivider(SPI_CLOCK_DIV4);
 }
 
-MAX31855::status_t MAX31855::readThermocouple(double &temperature, unit_t unit) {
-  temperature = 0;
+struct valueconfig {
+  uint8_t  shift; // how much to shift right to get to the value 
+  uint16_t mask;  // bits to mask for actual value
+  uint8_t  sign;  // bit holding the sign
+  double  factor;
+};
+
+MAX31855::status_t MAX31855::read(double &temperature, unit_t unit, bool j) {
+  valueconfig S[2] = {
+    { 18, 0x3FFF, 14, 0.25   }, // thermocouple
+    {  4, 0x0FFF, 12, 0.0625 }  // junction
+  };
+
   MAX31855::MAX31855_t data;
-  MAX31855::status_t result = readDataSPI(data);
+  MAX31855::status_t result;
+
+  if (so == 0 && sck == 0 && cs > 0) {
+    result = readDataSPI(data);
+  }
+  else {
+    result = readData(data);
+  }
 
   if (result == Ok) {
-    temperature = (data.value >> 18) & (1 << 13); // 0x1FFF; // bit 14 is the sign
-
-    if (data.b31) { // negative temperature
-      temperature = -temperature;
+    int16_t temp = (data.value >> S[j].shift) & S[j].mask;
+    if (temp & (1 << S[j].sign)) {
+      temp * -temp;
     }
     
-    temperature *= 0.25; // these are now Celsius
-    
+    temperature = temp * S[j].factor; // now in Celsius
+
     if (unit == Fahrenheit) {
       temperature = (temperature * 9.0 / 5.0) + 32; 
     }
@@ -59,26 +76,12 @@ MAX31855::status_t MAX31855::readThermocouple(double &temperature, unit_t unit) 
   return result;
 }
 
+MAX31855::status_t MAX31855::readThermocouple(double &temperature, unit_t unit) {
+  return read(temperature, unit);
+}
+
 MAX31855::status_t MAX31855::readJunction(double &temperature, unit_t unit) {
-  temperature = 0;
-  MAX31855::MAX31855_t data;
-  status_t result = readDataSPI(data);
-
-  if (result == Ok) {
-    temperature = (data.value >> 4) & (1 << 11); // 0x7FF; // bit 12 is the sign
-    
-    if (data.b15) {
-      temperature = -temperature; 
-    }
-    
-    temperature *= 0.0625; // Convert to Degree Celsius
-    
-    if (unit == Fahrenheit) {
-      temperature = (temperature * 9.0 / 5.0) + 32;  
-    }
-  }
-
-  return result;
+  return read(temperature, unit, true);
 }
 
 MAX31855::status_t MAX31855::readData(MAX31855::MAX31855_t &buffer) {
@@ -87,25 +90,22 @@ MAX31855::status_t MAX31855::readData(MAX31855::MAX31855_t &buffer) {
  
   for (uint8_t bitCount = 31; bitCount >= 0; bitCount--) {
     digitalWrite(sck, HIGH);
-    
     if (digitalRead(so)) {
       buffer.value |= ((uint32_t)1 << bitCount);
     } 
-    
     digitalWrite(sck, LOW);
   }
   
   digitalWrite(cs, HIGH);
-  
+
   return validateResponse(buffer);
 }
-
 
 MAX31855::status_t MAX31855::readDataSPI(MAX31855::MAX31855_t &buffer) {
   digitalWrite(cs, LOW);
   delay(1);
 
-  for (uint8_t i = 3; i >= 0; i--) {
+  for (int8_t i = 3; i >= 0; i--) {
     buffer.bytes[i] = SPI.transfer(0x00);
   }
 
@@ -113,7 +113,6 @@ MAX31855::status_t MAX31855::readDataSPI(MAX31855::MAX31855_t &buffer) {
 
   return validateResponse(buffer);
 }
-
 
 MAX31855::status_t MAX31855::validateResponse(MAX31855::MAX31855_t &buffer) { 
   if (buffer.Fault) {

@@ -24,9 +24,12 @@ ino
 #include  <MAX31855.h>
 
 
-#define thermocoupleSO 12
-#define thermocoupleCS 10
-#define thermocoupleCLK 13
+//#define thermocoupleSO 12
+//#define thermocoupleCLK 13
+//#define DATAOUT     11 // MOSI
+//#define SPICLOCK    13 // SCK
+
+#define thermocoupleCS 3
 
 //MAX31855  MAX31855(thermocoupleSO, thermocoupleCS, thermocoupleCLK);
 MAX31855  MAX31855(thermocoupleCS);
@@ -34,6 +37,9 @@ MAX31855  MAX31855(thermocoupleCS);
 void  setup()
 {
   Serial.begin(57600);
+  while (!Serial) ;
+
+  Serial.println("started.");
 }
 
 void  loop()
@@ -45,12 +51,12 @@ void  loop()
   Serial.print("Thermocouple temperature: ");
   Serial.print(temperature);
   Serial.println(" Degree Celsius");
-  
+
   //temperature = MAX31855.readJunction(MAX31855::Celsius);
   MAX31855.readJunction(temperature);
   Serial.print("Junction temperature: ");
   Serial.print(temperature);
   Serial.println(" Degree Celsius");
-  
+
   delay(1000);
 }
