@@ -36,7 +36,7 @@ MAX31855::MAX31855(uint8_t CS)
   digitalWrite(cs, HIGH);
 
   SPI.begin();
-#if 0  // this is note required in normal use cases
+#if 0 // this is not required in normal use cases
   SPI.setBitOrder(MSBFIRST);
   SPI.setDataMode(SPI_MODE0);
   SPI.setClockDivider(SPI_CLOCK_DIV4);
@@ -55,8 +55,8 @@ struct SensorConfig {
 // ----------------------------------------------------------------------------
 
 const SensorConfig sensors[2] = {
-  { 18, 0x3FFF, 14, 0.25   }, // thermocouple
-  {  4, 0x0FFF, 12, 0.0625 }  // junction
+  { 18, 0x3FFF, 13, 0.25   }, // thermocouple
+  {  4, 0x0FFF, 11, 0.0625 }  // junction
 };
 
 // ----------------------------------------------------------------------------
